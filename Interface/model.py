@@ -5,10 +5,10 @@ import numpy as np
 from PIL import Image
 from sklearn.cluster import KMeans
 import colorsys
-import streamlit as st
 import pandas as pd
 import subprocess
 import time
+import webbrowser
 mp_drawing = mp.solutions.drawing_utils
 mp_selfie_segmentation = mp.solutions.selfie_segmentation
 
@@ -189,83 +189,291 @@ def recommend_colors(season):
     return [url, palette]
 def open_url(url):
     webbrowser.open(url)
-def main():
-    # Streamlit UI
-    st.title('ReStyle')
 
-    uploaded_file = st.file_uploader("Upload an image of yourself", type=["jpg", "jpeg", "png"])
+def main():
+    # Set page config for better UI
+    st.set_page_config(
+        page_title="MyPalette - Color Analysis",
+        page_icon="🎨",
+        layout="wide",
+        initial_sidebar_state="collapsed"
+    )
+    
+    # Custom CSS for modern, minimal design
+    st.markdown("""
+        <style>
+        .main-header {
+            text-align: center;
+            padding: 2rem 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            font-size: 1.2rem;
+            margin-bottom: 3rem;
+            font-weight: 300;
+        }
+        
+        .upload-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 2rem;
+            margin: 2rem 0;
+            border: 2px dashed #e0e0e0;
+            transition: all 0.3s ease;
+        }
+        
+        .upload-section:hover {
+            border-color: #667eea;
+            background: #f0f2ff;
+        }
+        
+        .result-card {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border-left: 4px solid #667eea;
+        }
+        
+        .color-palette {
+            display: flex;
+            gap: 10px;
+            margin: 1rem 0;
+            flex-wrap: wrap;
+        }
+        
+        .color-swatch {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .cta-button {
+            display: inline-block;
+            padding: 12px 30px;
+            font-size: 16px;
+            font-weight: 600;
+            color: white;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 25px;
+            text-align: center;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            margin: 1rem 0;
+        }
+        
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(102, 126, 234, 0.4);
+            color: white;
+            text-decoration: none;
+        }
+        
+        .progress-container {
+            margin: 2rem 0;
+        }
+        
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 2rem 0;
+        }
+        
+        .step {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #e0e0e0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 10px;
+            font-weight: bold;
+            color: #666;
+        }
+        
+        .step.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .step.completed {
+            background: #4caf50;
+            color: white;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+    
+    # Header
+    st.markdown('<h1 class="main-header">🎨 MyPalette</h1>', unsafe_allow_html=True)
+    st.markdown('<p class="subtitle">Discover your perfect color palette with AI-powered analysis</p>', unsafe_allow_html=True)
+    
+    # Step indicator
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        st.markdown("""
+            <div class="step-indicator">
+                <div class="step active">1</div>
+                <div style="width: 50px; height: 2px; background: #e0e0e0;"></div>
+                <div class="step">2</div>
+                <div style="width: 50px; height: 2px; background: #e0e0e0;"></div>
+                <div class="step">3</div>
+            </div>
+        """, unsafe_allow_html=True)
+        st.markdown('<p style="text-align: center; color: #666; margin-top: 1rem;">Upload → Analyze → Shop</p>', unsafe_allow_html=True)
+    
+    # Upload section
+    st.markdown('<div class="upload-section">', unsafe_allow_html=True)
+    
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        st.markdown("### 📸 Upload Your Photo")
+        st.markdown("Upload a clear photo of yourself for personalized color analysis")
+        
+        uploaded_file = st.file_uploader(
+            "",
+            type=["jpg", "jpeg", "png"],
+            help="Supported formats: JPG, JPEG, PNG"
+        )
+    
+    st.markdown('</div>', unsafe_allow_html=True)
 
     if uploaded_file is not None:
-        # Display the uploaded image (optional)
-        #st.image(uploaded_file, caption="Uploaded Image", use_column_width=True)
-
-        # Step 2: Display a video with autoplay
-        video_file = "./animation.mp4"  # Replace with the path to your video file
-
-        # Check if the file exists
-        try:
-            with open(video_file, "rb") as video:
-                st.video(video.read())
+        # Update step indicator
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            st.markdown("""
+                <div class="step-indicator">
+                    <div class="step completed">✓</div>
+                    <div style="width: 50px; height: 2px; background: #4caf50;"></div>
+                    <div class="step active">2</div>
+                    <div style="width: 50px; height: 2px; background: #e0e0e0;"></div>
+                    <div class="step">3</div>
+                </div>
+            """, unsafe_allow_html=True)
+        
+        # Processing section
+        with st.container():
+            st.markdown('<div class="result-card">', unsafe_allow_html=True)
+            st.markdown("### 🔬 Analyzing Your Colors...")
             
-            # Simulate the video playing duration (example: 7 seconds)
-        except:
-            time.sleep(7)
-
-        # Simulate the video playing duration (example: 7 seconds)
-        #time.sleep(7)
-        file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
-        image = cv2.imdecode(file_bytes, 1)
-
-        segmented_image = apply_selfie_segmentation(image, 0)
-
-        faces = detect_faces(segmented_image)
-
-        cropped_image = crop_to_face(segmented_image.copy(), faces)
-
-        pil_segmented_image = Image.fromarray(cv2.cvtColor(segmented_image, cv2.COLOR_BGR2RGB))
-        if cropped_image is not None:
-            pil_cropped_image = Image.fromarray(cv2.cvtColor(cropped_image, cv2.COLOR_BGR2RGB))
-
-            colors = detect_colors(cropped_image, num_colors=20, detect_lip_color=True)
-
-            hsl_colors = [rgb_to_hsl(r, g, b) for r, g, b in colors]
-            hues = [h for h, s, l in hsl_colors]
-            lightness_values = [l for h, s, l in hsl_colors]
-            saturation_values = [s for h, s, l in hsl_colors]
+            # Progress bar
+            progress_bar = st.progress(0)
+            status_text = st.empty()
             
-            temperature = determine_temperature(hues)
-            depth = determine_depth(lightness_values)
-            chroma = determine_chroma(saturation_values)
-            season = map_to_season(hues, lightness_values, saturation_values)
-
-            recommended_colors_url, recommended_colors_palette = recommend_colors(season)
-            st.markdown(
-                f'<a href="{recommended_colors_url}" target="_blank" class="button">Check out the recommended products on Myntra</a>',
-                unsafe_allow_html=True
-            )
-
-            # Add custom CSS to style the link as a button
-            st.markdown(
-                """
-                <style>
-                .button {
-                    display: inline-block;
-                    padding: 10px 20px;
-                    font-size: 16px;
-                    font-weight: bold;
-                    color: white;
-                    background-color: #000000;
-                    border-radius: 5px;
-                    text-align: center;
-                    text-decoration: none;
-                }
-                .button:hover {
-                    background-color: #000000;
-                }
-                </style>
-                """,
-                unsafe_allow_html=True
-            )
+            # Processing steps
+            status_text.text("📤 Processing uploaded image...")
+            progress_bar.progress(20)
+            
+            file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
+            image = cv2.imdecode(file_bytes, 1)
+            
+            status_text.text("🎭 Applying segmentation...")
+            progress_bar.progress(40)
+            segmented_image = apply_selfie_segmentation(image, 0)
+            
+            status_text.text("👤 Detecting face...")
+            progress_bar.progress(60)
+            faces = detect_faces(segmented_image)
+            
+            status_text.text("🎨 Extracting colors...")
+            progress_bar.progress(80)
+            cropped_image = crop_to_face(segmented_image.copy(), faces)
+            
+            if cropped_image is not None:
+                progress_bar.progress(100)
+                status_text.text("✅ Analysis complete!")
+                
+                # Show animation video
+                video_file = "./animation.mp4"
+                try:
+                    with open(video_file, "rb") as video:
+                        st.video(video.read())
+                except:
+                    time.sleep(2)
+                
+                # Results section
+                st.markdown('</div>', unsafe_allow_html=True)
+                
+                # Final step indicator
+                col1, col2, col3 = st.columns([1, 2, 1])
+                with col2:
+                    st.markdown("""
+                        <div class="step-indicator">
+                            <div class="step completed">✓</div>
+                            <div style="width: 50px; height: 2px; background: #4caf50;"></div>
+                            <div class="step completed">✓</div>
+                            <div style="width: 50px; height: 2px; background: #4caf50;"></div>
+                            <div class="step active">3</div>
+                        </div>
+                    """, unsafe_allow_html=True)
+                
+                # Color analysis results
+                colors = detect_colors(cropped_image, num_colors=20, detect_lip_color=True)
+                hsl_colors = [rgb_to_hsl(r, g, b) for r, g, b in colors]
+                hues = [h for h, s, l in hsl_colors]
+                lightness_values = [l for h, s, l in hsl_colors]
+                saturation_values = [s for h, s, l in hsl_colors]
+                
+                temperature = determine_temperature(hues)
+                depth = determine_depth(lightness_values)
+                chroma = determine_chroma(saturation_values)
+                season = map_to_season(hues, lightness_values, saturation_values)
+                
+                recommended_colors_url, recommended_colors_palette = recommend_colors(season)
+                
+                # Display results in a beautiful card
+                st.markdown('<div class="result-card">', unsafe_allow_html=True)
+                st.markdown("### 🌟 Your Color Analysis Results")
+                
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    st.markdown(f"**🌡️ Temperature:** {temperature}")
+                    st.markdown(f"**🌊 Depth:** {depth}")
+                    st.markdown(f"**✨ Chroma:** {chroma}")
+                    st.markdown(f"**🍂 Season:** {season}")
+                
+                with col2:
+                    st.markdown("**� Recommended for you:**")
+                    st.markdown("Based on your color analysis, we've curated the perfect color palette for your shopping experience on Myntra!")
+                
+                st.markdown('</div>', unsafe_allow_html=True)
+                
+                # Call to action
+                st.markdown('<div class="result-card">', unsafe_allow_html=True)
+                st.markdown("### 🛍️ Ready to Shop?")
+                st.markdown("Discover clothing that perfectly matches your color palette!")
+                
+                st.markdown(
+                    f'<a href="{recommended_colors_url}" target="_blank" class="cta-button">🎯 Shop Your Colors on Myntra</a>',
+                    unsafe_allow_html=True
+                )
+                st.markdown('</div>', unsafe_allow_html=True)
+            else:
+                st.error("❌ No face detected in the image. Please upload a clear photo with your face visible.")
+    
+    # Footer
+    st.markdown("---")
+    st.markdown(
+        '<p style="text-align: center; color: #666; margin-top: 2rem;">Made with ❤️ using AI • Powered by 12-Season Color Theory</p>',
+        unsafe_allow_html=True
+    )
 
 
 
